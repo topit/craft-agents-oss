@@ -95,6 +95,10 @@ function isCodeFile(name: string): boolean {
   return ext ? CODE_EXTENSIONS.has(ext) : false
 }
 
+export function isEscapeDuringComposition(event: { key: string; nativeEvent?: { isComposing?: boolean } | null }): boolean {
+  return event.key === 'Escape' && !!event.nativeEvent?.isComposing
+}
+
 function renderBadgeHTML(
   type: MentionItemType,
   label: string,
@@ -645,6 +649,14 @@ export const RichTextInput = React.forwardRef<RichTextInputHandle, RichTextInput
       onBlur?.(e)
     }, [onBlur])
 
+    const handleKeyDownInternal = React.useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (isEscapeDuringComposition(e)) {
+        e.stopPropagation()
+        return
+      }
+      onKeyDown?.(e)
+    }, [onKeyDown])
+
     // Sync value from props (when parent updates value externally)
     React.useEffect(() => {
       if (!divRef.current) return
@@ -755,7 +767,7 @@ export const RichTextInput = React.forwardRef<RichTextInputHandle, RichTextInput
           // Use inline style for line-height to override text-sm's built-in line-height
           style={{ lineHeight: 1.25 }}
           onInput={handleInput}
-          onKeyDown={onKeyDown}
+          onKeyDown={handleKeyDownInternal}
           onFocus={handleFocus}
           onBlur={handleBlur}
           onPaste={handlePasteInternal}
